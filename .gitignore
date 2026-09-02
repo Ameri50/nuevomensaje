@@ -1,0 +1,13 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.xcworkspace/
+.DS_Store
+
+# Swift
+.build/
+Package.resolved
+
+# Secrets
+**/Secrets.swift
