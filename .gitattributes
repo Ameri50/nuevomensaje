@@ -1,1 +1,2 @@
+*.json filter=lfs diff=lfs merge=lfs -text
 mensajedeVGR/Resources/bro_branham_sermons.json filter=lfs diff=lfs merge=lfs -text
