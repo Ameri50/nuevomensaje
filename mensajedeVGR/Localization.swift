@@ -234,6 +234,18 @@ struct Strings {
         "es": "Estado de Importación",
         "en": "Import Status"
     ]
+    static let importStatusLoading = [
+        "es": "⏳ Leyendo archivo...",
+        "en": "⏳ Reading file..."
+    ]
+    static let importStatusParsed = [
+        "es": "⏳ Importando {n} sermones...",
+        "en": "⏳ Importing {n} sermons..."
+    ]
+    static let importStatusProgress = [
+        "es": "⏳ {done} / {total} sermones...",
+        "en": "⏳ {done} / {total} sermons..."
+    ]
 
     // MARK: - Home Example Questions
     static let homeQuestion1 = [
@@ -310,7 +322,10 @@ struct Strings {
         "importAudioSubtitle": importAudioSubtitle,
         "importSpanishSermons": importSpanishSermons,
         "importSpanishSermonsSubtitle": importSpanishSermonsSubtitle,
-        "importStatusTitle": importStatusTitle
+        "importStatusTitle": importStatusTitle,
+        "importStatusLoading": importStatusLoading,
+        "importStatusParsed": importStatusParsed,
+        "importStatusProgress": importStatusProgress
     ]
 }
 

@@ -131,18 +131,51 @@ struct AuthorizedImportView: View {
             importStatus = "❌ No se encontró bro_branham_sermons_es.json en el bundle."
             return
         }
-        do {
-            let data = try Data(contentsOf: url)
-            let envelope = try JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data)
-            
-            let (insertados, actualizados) = DemoLibraryService.shared.upsert(
-                catalog: envelope.sermons,
-                context: modelContext
-            )
-            
-            importStatus = "✅ \(insertados) nuevo(s), \(actualizados) actualizado(s) en español."
-        } catch {
-            importStatus = "❌ Error al importar: \(error.localizedDescription)"
+        importStatus = localization.getString("importStatusLoading")
+        
+        Task.detached(priority: .userInitiated) {
+            do {
+                // Leer y decodificar el JSON fuera del hilo principal
+                let data = try Data(contentsOf: url)
+                let envelope = try JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data)
+                let total = envelope.sermons.count
+                
+                await MainActor.run {
+                    importStatus = localization.getString("importStatusParsed")
+                        .replacingOccurrences(of: "{n}", with: "\(total)")
+                }
+                
+                // Procesar en lotes de 50 para no congelar la UI
+                let batchSize = 50
+                var insertados = 0
+                var actualizados = 0
+                
+                for batchStart in stride(from: 0, to: envelope.sermons.count, by: batchSize) {
+                    let batchEnd = min(batchStart + batchSize, envelope.sermons.count)
+                    let batch = Array(envelope.sermons[batchStart..<batchEnd])
+                    
+                    let (ins, act) = await MainActor.run {
+                        DemoLibraryService.shared.upsert(catalog: batch, context: modelContext)
+                    }
+                    insertados += ins
+                    actualizados += act
+                    
+                    let progress = batchEnd
+                    await MainActor.run {
+                        importStatus = localization.getString("importStatusProgress")
+                            .replacingOccurrences(of: "{done}", with: "\(progress)")
+                            .replacingOccurrences(of: "{total}", with: "\(total)")
+                    }
+                }
+                
+                await MainActor.run {
+                    importStatus = "✅ \(insertados) nuevo(s), \(actualizados) actualizado(s) en español."
+                }
+            } catch {
+                await MainActor.run {
+                    importStatus = "❌ Error al importar: \(error.localizedDescription)"
+                }
+            }
         }
     }
 }
