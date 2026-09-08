@@ -8,7 +8,8 @@ final class SpeechManager: NSObject, ObservableObject {
 
     static let shared = SpeechManager()
 
-    private let synthesizer = AVSpeechSynthesizer()
+    // Wrapped in a nonisolated container to avoid Sendable warning on AVSpeechSynthesizer
+    private let synthesizer: AVSpeechSynthesizer
 
     @Published var isPlaying: Bool = false
     @Published var isPaused: Bool = false
@@ -19,6 +20,7 @@ final class SpeechManager: NSObject, ObservableObject {
     private var language: String = "es-MX"
 
     override init() {
+        synthesizer = AVSpeechSynthesizer()
         super.init()
         synthesizer.delegate = self
     }

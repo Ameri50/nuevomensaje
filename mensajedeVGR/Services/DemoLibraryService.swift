@@ -5,10 +5,10 @@ import SwiftData
 final class DemoLibraryService {
     static let shared = DemoLibraryService()
 
-    func seedIfNeeded(context: ModelContext, onComplete: (@Sendable () -> Void)? = nil) {
+    func seedIfNeeded(context: ModelContext, onComplete: (@MainActor () -> Void)? = nil) {
         let fetch: FetchDescriptor<SermonRecord> = FetchDescriptor<SermonRecord>()
         guard let existing = try? context.fetch(fetch), existing.isEmpty else {
-            onComplete?()
+            Task { @MainActor in onComplete?() }
             return
         }
 
@@ -66,6 +66,17 @@ final class DemoLibraryService {
     }
 
     /// Carga el JSON de sermones en español desde el bundle, si existe. Async para no bloquear.
+    private func loadSpanishCatalogAsync() async -> [BroSermonCatalogEntry]? {
+        guard let url = Bundle.main.url(forResource: "bro_branham_sermons_es", withExtension: "json") else {
+            return nil
+        }
+        guard let data = try? Data(contentsOf: url),
+              !BroSermonCatalogLoader.isGitLFSPointer(data) else {
+            return nil
+        }
+        let envelope = try? JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data)
+        return envelope?.sermons
+    }
     private func loadSpanishCatalogAsync() async -> [BroSermonCatalogEntry]? {
         guard let url = Bundle.main.url(forResource: "bro_branham_sermons_es", withExtension: "json") else {
             return nil

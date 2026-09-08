@@ -58,17 +58,17 @@ struct mensajedeVGRApp: App {
                 let hasData = (try? context.fetch(fetch))?.isEmpty == false
 
                 if hasData {
-                    // Ya hay datos, arrancar directamente
                     seedDone = true
                 } else {
-                    // Primera vez: mostrar pantalla de carga y sembrar en background
                     isSeeding = true
                     DemoLibraryService.shared.seedIfNeeded(
                         context: context,
                         onComplete: {
-                            withAnimation {
-                                isSeeding = false
-                                seedDone = true
+                            Task { @MainActor in
+                                withAnimation {
+                                    self.isSeeding = false
+                                    self.seedDone = true
+                                }
                             }
                         }
                     )
