@@ -4,20 +4,20 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var searchText = ""
+    @ObservedObject private var localization = LocalizationManager.shared
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Mensajes de William Branham")
+                        Text(Strings.get("homeTitle", language: localization.currentLanguage))
                             .font(.largeTitle.bold())
-                        Text("Busca, estudia y escucha los mensajes.")
-                            .foregroundStyle(.secondary)
+                        Text(Strings.get("homeSubtitle", language: localization.currentLanguage))
                     }
                     .padding(.horizontal)
 
-                    SearchBar(text: $searchText, placeholder: "Buscar mensajes, referencias o temas")
+                    SearchBar(text: $searchText, placeholder: Strings.get("homeSearch", language: localization.currentLanguage))
 
                     if let featuredMessage = defaultMessage() {
                         HomeSection(title: "Continuar leyendo") {
