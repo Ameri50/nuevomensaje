@@ -40,6 +40,88 @@ final class DemoLibraryService {
         try? context.save()
     }
 
+    /// Inserta o actualiza sermones en SwiftData a partir de un catálogo
+    /// (por ejemplo, el resultado de importar traducciones en español).
+    /// A diferencia de seedIfNeeded, esto SIEMPRE aplica los cambios,
+    /// sin importar si la base de datos ya tenía datos — por eso es el
+    /// método correcto para agregar/actualizar contenido después del
+    /// primer arranque de la app.
+    ///
+    /// - Returns: (insertados, actualizados)
+    @discardableResult
+    func upsert(catalog: [BroSermonCatalogEntry], context: ModelContext) -> (inserted: Int, updated: Int) {
+        var insertados = 0
+        var actualizados = 0
+
+        for sermon in catalog {
+            let code = sermon.id
+            let fetch = FetchDescriptor<SermonRecord>(
+                predicate: #Predicate { $0.code == code }
+            )
+            let existentes = (try? context.fetch(fetch)) ?? []
+
+            let nuevoBody = sermon.paragraphs.map { $0.text }.joined(separator: "\n\n")
+            let nuevaFecha = parseDate(from: sermon.meta?.date ?? sermon.date ?? "")
+            let nuevaUbicacion = sermon.meta?.location ?? sermon.location ?? "Desconocida"
+            let nuevaDuracion = estimateDuration(from: sermon.paragraphs.count)
+
+            if let existente = existentes.first {
+                // Actualiza el registro existente en vez de duplicarlo
+                existente.title = sermon.title
+                existente.date = nuevaFecha
+                existente.location = nuevaUbicacion
+                existente.language = "Español"
+                existente.durationMinutes = nuevaDuracion
+                existente.body = nuevoBody
+                existente.updatedAt = .now
+
+                // Reemplaza los párrafos asociados
+                let sermonID = existente.id
+                let paragraphFetch = FetchDescriptor<ParagraphRecord>(
+                    predicate: #Predicate { $0.sermonID == sermonID }
+                )
+                if let paragrafosViejos = try? context.fetch(paragraphFetch) {
+                    for p in paragrafosViejos { context.delete(p) }
+                }
+                for paragraph in sermon.paragraphs {
+                    context.insert(ParagraphRecord(
+                        sermonID: sermonID,
+                        number: paragraph.number,
+                        text: paragraph.text
+                    ))
+                }
+                actualizados += 1
+            } else {
+                // Sermón nuevo, no existía por code
+                let sermonRecord = SermonRecord(
+                    code: code,
+                    title: sermon.title,
+                    date: nuevaFecha,
+                    location: nuevaUbicacion,
+                    language: "Español",
+                    durationMinutes: nuevaDuracion,
+                    audioURL: nil,
+                    source: "importado-es",
+                    body: nuevoBody,
+                    isFeatured: false
+                )
+                context.insert(sermonRecord)
+
+                for paragraph in sermon.paragraphs {
+                    context.insert(ParagraphRecord(
+                        sermonID: sermonRecord.id,
+                        number: paragraph.number,
+                        text: paragraph.text
+                    ))
+                }
+                insertados += 1
+            }
+        }
+
+        try? context.save()
+        return (insertados, actualizados)
+    }
+
     func allMessages(context: ModelContext) -> [SermonRecord] {
         let fetch: FetchDescriptor<SermonRecord> = FetchDescriptor<SermonRecord>(sortBy: [SortDescriptor(\.title)])
         return (try? context.fetch(fetch)) ?? []

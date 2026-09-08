@@ -1,6 +1,8 @@
 import SwiftUI
+import SwiftData
 
 struct AuthorizedImportView: View {
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var localization: LocalizationManager
     @State private var showingFilePicker = false
     @State private var importStatus: String = ""
@@ -130,10 +132,15 @@ struct AuthorizedImportView: View {
             return
         }
         do {
-            let agregados = try BroSermonCatalogLoader.shared.importAndMerge(from: url)
-            importStatus = agregados > 0
-                ? "✅ Se agregaron \(agregados) sermón(es) en español."
-                : "ℹ️ No había sermones nuevos que agregar (ya existían)."
+            let data = try Data(contentsOf: url)
+            let envelope = try JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data)
+            
+            let (insertados, actualizados) = DemoLibraryService.shared.upsert(
+                catalog: envelope.sermons,
+                context: modelContext
+            )
+            
+            importStatus = "✅ \(insertados) nuevo(s), \(actualizados) actualizado(s) en español."
         } catch {
             importStatus = "❌ Error al importar: \(error.localizedDescription)"
         }
