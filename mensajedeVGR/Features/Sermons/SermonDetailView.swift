@@ -81,38 +81,64 @@ struct SermonDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(.horizontal)
 
-                    // MARK: - Audio Panel (branham.org WebView)
-                    VStack(alignment: .leading, spacing: 8) {
-                        Button(action: { withAnimation { showAudioPlayer.toggle() } }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: showAudioPlayer ? "pause.circle.fill" : "play.circle.fill")
-                                    .font(.system(size: 32))
-                                    .foregroundStyle(.blue)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(localization.getString("sermonAudioPlayback"))
-                                        .font(.subheadline.bold())
-                                    Text("branham.org — audio oficial")
+                    // MARK: - Audio Panel (branham.org)
+                    if let url = branhamAudioURL {
+                        VStack(spacing: 8) {
+                            // Botón principal de audio
+                            Link(destination: url) {
+                                HStack(spacing: 14) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.blue)
+                                            .frame(width: 48, height: 48)
+                                        Image(systemName: "headphones")
+                                            .font(.system(size: 22))
+                                            .foregroundStyle(.white)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(localization.getString("sermonAudioPlayback"))
+                                            .font(.subheadline.bold())
+                                            .foregroundStyle(.primary)
+                                        Text("Abrir en branham.org →")
+                                            .font(.caption)
+                                            .foregroundStyle(.blue)
+                                    }
+
+                                    Spacer()
+
+                                    Image(systemName: "arrow.up.right.square")
+                                        .foregroundStyle(.blue)
+                                        .font(.system(size: 18))
+                                }
+                                .padding()
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
+
+                            // Panel WebView embebido (colapsable)
+                            Button(action: { withAnimation { showAudioPlayer.toggle() } }) {
+                                HStack {
+                                    Image(systemName: showAudioPlayer ? "chevron.up.circle" : "chevron.down.circle")
+                                        .foregroundStyle(.secondary)
+                                    Text(showAudioPlayer ? "Cerrar reproductor" : "Abrir reproductor aquí")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
+                                    Spacer()
                                 }
-                                Spacer()
-                                Image(systemName: showAudioPlayer ? "chevron.up" : "chevron.down")
-                                    .foregroundStyle(.secondary)
+                                .padding(.horizontal, 4)
                             }
-                            .padding()
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-                        .buttonStyle(.plain)
+                            .buttonStyle(.plain)
 
-                        if showAudioPlayer, let url = branhamAudioURL {
-                            WebPlayerView(url: url)
-                                .frame(height: 500)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            if showAudioPlayer {
+                                WebPlayerView(url: url)
+                                    .frame(height: 480)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
 
                     // MARK: - TTS Player
                     if !paragraphs.isEmpty {
