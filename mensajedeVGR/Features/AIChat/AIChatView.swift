@@ -21,7 +21,7 @@ struct AIChatView: View {
                         Text(localization.getString("homeAskMessages"))
                             .font(.headline)
                         
-                        Text("Haz preguntas sobre los mensajes de William Branham")
+                        Text(localization.getString("aiChatHint"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -44,7 +44,7 @@ struct AIChatView: View {
                     Divider()
                     
                     HStack(spacing: 12) {
-                        TextField("Pregunta...", text: $inputText)
+                        TextField(localization.getString("aiChatPlaceholder"), text: $inputText)
                             .textFieldStyle(.roundedBorder)
                             .disabled(isLoading)
                         
@@ -89,7 +89,7 @@ struct AIChatView: View {
             // Simular respuesta de IA
             let aiResponse = AIChatMessage(
                 role: "assistant",
-                text: "Procesando tu pregunta...",
+                text: LocalizationManager.shared.getString("aiChatProcessing"),
                 timestamp: .now,
                 sourceSummary: ""
             )

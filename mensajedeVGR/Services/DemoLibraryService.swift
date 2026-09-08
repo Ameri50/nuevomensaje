@@ -5,39 +5,77 @@ import SwiftData
 final class DemoLibraryService {
     static let shared = DemoLibraryService()
 
-    func seedIfNeeded(context: ModelContext) {
+    func seedIfNeeded(context: ModelContext, onComplete: (@Sendable () -> Void)? = nil) {
         let fetch: FetchDescriptor<SermonRecord> = FetchDescriptor<SermonRecord>()
-        guard let existing = try? context.fetch(fetch), existing.isEmpty else { return }
-
-        let catalog = BroSermonCatalogLoader.shared.loadCatalog()
-
-        for sermon in catalog {
-            let sermonRecord = SermonRecord(
-                code: sermon.id,
-                title: sermon.title,
-                date: parseDate(from: sermon.meta?.date ?? sermon.date ?? ""),
-                location: sermon.meta?.location ?? sermon.location ?? "Desconocida",
-                language: "Inglés",
-                durationMinutes: estimateDuration(from: sermon.paragraphs.count),
-                audioURL: nil,
-                source: "bro-william-branham-sermon-library",
-                body: sermon.paragraphs.map { $0.text }.joined(separator: "\n\n"),
-                isFeatured: false
-            )
-
-            context.insert(sermonRecord)
-
-            for paragraph in sermon.paragraphs {
-                let paragraphRecord = ParagraphRecord(
-                    sermonID: sermonRecord.id,
-                    number: paragraph.number,
-                    text: paragraph.text
-                )
-                context.insert(paragraphRecord)
-            }
+        guard let existing = try? context.fetch(fetch), existing.isEmpty else {
+            onComplete?()
+            return
         }
 
-        try? context.save()
+        Task.detached(priority: .userInitiated) {
+            // Cargar y decodificar el JSON fuera del hilo principal
+            let catalog: [BroSermonCatalogEntry]
+            let isSpanish: Bool
+
+            if let spanishCatalog = await self.loadSpanishCatalogAsync() {
+                catalog = spanishCatalog
+                isSpanish = true
+            } else {
+                catalog = BroSermonCatalogLoader.shared.loadCatalog()
+                isSpanish = false
+            }
+
+            // Insertar en lotes de 50 en el MainActor
+            let batchSize = 50
+            for batchStart in stride(from: 0, to: catalog.count, by: batchSize) {
+                let batchEnd = min(batchStart + batchSize, catalog.count)
+                let batch = Array(catalog[batchStart..<batchEnd])
+
+                await MainActor.run {
+                    for sermon in batch {
+                        let sermonRecord = SermonRecord(
+                            code: sermon.id,
+                            title: sermon.title,
+                            date: self.parseDate(from: sermon.meta?.date ?? sermon.date ?? ""),
+                            location: sermon.meta?.location ?? sermon.location ?? "Desconocida",
+                            language: isSpanish ? "Español" : "Inglés",
+                            durationMinutes: self.estimateDuration(from: sermon.paragraphs.count),
+                            audioURL: nil,
+                            source: isSpanish ? "importado-es" : "bro-william-branham-sermon-library",
+                            body: sermon.paragraphs.map { $0.text }.joined(separator: "\n\n"),
+                            isFeatured: false
+                        )
+                        context.insert(sermonRecord)
+
+                        for paragraph in sermon.paragraphs {
+                            context.insert(ParagraphRecord(
+                                sermonID: sermonRecord.id,
+                                number: paragraph.number,
+                                text: paragraph.text
+                            ))
+                        }
+                    }
+                    try? context.save()
+                }
+            }
+
+            await MainActor.run {
+                onComplete?()
+            }
+        }
+    }
+
+    /// Carga el JSON de sermones en español desde el bundle, si existe. Async para no bloquear.
+    private func loadSpanishCatalogAsync() async -> [BroSermonCatalogEntry]? {
+        guard let url = Bundle.main.url(forResource: "bro_branham_sermons_es", withExtension: "json") else {
+            return nil
+        }
+        guard let data = try? Data(contentsOf: url),
+              !BroSermonCatalogLoader.isGitLFSPointer(data) else {
+            return nil
+        }
+        let envelope = try? JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data)
+        return envelope?.sermons
     }
 
     /// Inserta o actualiza sermones en SwiftData a partir de un catálogo
