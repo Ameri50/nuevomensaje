@@ -126,7 +126,9 @@ final class BroSermonCatalogLoader {
         return parse(data)
     }
 
-    private func cacheCatalog(_ sermons: [BroSermonCatalogEntry]) {
+    // Antes era "private func" — ahora es "func" (sin private) para que
+    // la extensión BroSermonCatalogLoader+Import.swift pueda usarla.
+    func cacheCatalog(_ sermons: [BroSermonCatalogEntry]) {
         let folderURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
         let fileURL = folderURL.appendingPathComponent("bro_branham_sermons_cache.json")
 
