@@ -26,9 +26,9 @@ struct AuthorizedImportView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "doc.badge.plus")
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Importar PDF")
+                                Text(localization.getString("importPDF"))
                                     .font(.subheadline)
-                                Text("Documentos autorizados")
+                                Text(localization.getString("importPDFSubtitle"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -46,9 +46,9 @@ struct AuthorizedImportView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "waveform.circle")
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Importar Audio")
+                                Text(localization.getString("importAudio"))
                                     .font(.subheadline)
-                                Text("Archivos MP3/M4A")
+                                Text(localization.getString("importAudioSubtitle"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -66,9 +66,9 @@ struct AuthorizedImportView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "text.book.closed")
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Importar sermones en español")
+                                Text(localization.getString("importSpanishSermons"))
                                     .font(.subheadline)
-                                Text("Desde bro_branham_sermons_es.json")
+                                Text(localization.getString("importSpanishSermonsSubtitle"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -107,7 +107,7 @@ struct AuthorizedImportView: View {
                 // MARK: - Estado de Importación
                 if !importStatus.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Estado de Importación")
+                        Text(localization.getString("importStatusTitle"))
                             .font(.headline)
                         Text(importStatus)
                             .font(.caption)

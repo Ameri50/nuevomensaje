@@ -158,7 +158,101 @@ struct Strings {
         "es": "Buscar",
         "en": "Search"
     ]
-    
+
+    // MARK: - Sermon Detail View
+    static let sermonAudioPlayback = [
+        "es": "Reproducción de audio",
+        "en": "Audio Playback"
+    ]
+    static let sermonContent = [
+        "es": "Contenido",
+        "en": "Content"
+    ]
+    static let sermonMyNotes = [
+        "es": "Mis Notas",
+        "en": "My Notes"
+    ]
+    static let sermonSaveNote = [
+        "es": "Guardar Nota",
+        "en": "Save Note"
+    ]
+
+    // MARK: - Favorites View
+    static let favoritesEmpty = [
+        "es": "Sin favoritos",
+        "en": "No favorites"
+    ]
+    static let favoritesEmptyHint = [
+        "es": "Agrega mensajes a favoritos para verlos aquí",
+        "en": "Add messages to favorites to see them here"
+    ]
+    static let favoritesParagraph = [
+        "es": "Párrafo",
+        "en": "Paragraph"
+    ]
+
+    // MARK: - AI Chat View
+    static let aiChatHint = [
+        "es": "Haz preguntas sobre los mensajes de William Branham",
+        "en": "Ask questions about William Branham's messages"
+    ]
+    static let aiChatPlaceholder = [
+        "es": "Pregunta...",
+        "en": "Ask..."
+    ]
+    static let aiChatProcessing = [
+        "es": "Procesando tu pregunta...",
+        "en": "Processing your question..."
+    ]
+
+    // MARK: - Import View
+    static let importPDF = [
+        "es": "Importar PDF",
+        "en": "Import PDF"
+    ]
+    static let importPDFSubtitle = [
+        "es": "Documentos autorizados",
+        "en": "Authorized documents"
+    ]
+    static let importAudio = [
+        "es": "Importar Audio",
+        "en": "Import Audio"
+    ]
+    static let importAudioSubtitle = [
+        "es": "Archivos MP3/M4A",
+        "en": "MP3/M4A files"
+    ]
+    static let importSpanishSermons = [
+        "es": "Importar sermones en español",
+        "en": "Import Spanish sermons"
+    ]
+    static let importSpanishSermonsSubtitle = [
+        "es": "Desde bro_branham_sermons_es.json",
+        "en": "From bro_branham_sermons_es.json"
+    ]
+    static let importStatusTitle = [
+        "es": "Estado de Importación",
+        "en": "Import Status"
+    ]
+
+    // MARK: - Home Example Questions
+    static let homeQuestion1 = [
+        "es": "¿Qué enseñó Branham sobre la mujer y el hombre?",
+        "en": "What did Branham teach about women and men?"
+    ]
+    static let homeQuestion2 = [
+        "es": "¿Qué dijo sobre la serpiente?",
+        "en": "What did he say about the serpent?"
+    ]
+    static let homeQuestion3 = [
+        "es": "¿Dónde habló sobre Daniel?",
+        "en": "Where did he speak about Daniel?"
+    ]
+    static let homeQuestion4 = [
+        "es": "Busca todos los mensajes donde menciona Génesis 3.",
+        "en": "Find all messages where he mentions Genesis 3."
+    ]
+
     // MARK: - Getter
     static func get(_ key: String, language: String) -> String {
         let dict = stringDictionary[key] ?? [:]
@@ -182,6 +276,10 @@ struct Strings {
         "homeReferenceSource": homeReferenceSource,
         "homeUnauthorizedWarning": homeUnauthorizedWarning,
         "homeAskMessages": homeAskMessages,
+        "homeQuestion1": homeQuestion1,
+        "homeQuestion2": homeQuestion2,
+        "homeQuestion3": homeQuestion3,
+        "homeQuestion4": homeQuestion4,
         "settingsTitle": settingsTitle,
         "settingsAppearance": settingsAppearance,
         "settingsDarkMode": settingsDarkMode,
@@ -195,7 +293,24 @@ struct Strings {
         "cancel": cancel,
         "save": save,
         "close": close,
-        "search": search
+        "search": search,
+        "sermonAudioPlayback": sermonAudioPlayback,
+        "sermonContent": sermonContent,
+        "sermonMyNotes": sermonMyNotes,
+        "sermonSaveNote": sermonSaveNote,
+        "favoritesEmpty": favoritesEmpty,
+        "favoritesEmptyHint": favoritesEmptyHint,
+        "favoritesParagraph": favoritesParagraph,
+        "aiChatHint": aiChatHint,
+        "aiChatPlaceholder": aiChatPlaceholder,
+        "aiChatProcessing": aiChatProcessing,
+        "importPDF": importPDF,
+        "importPDFSubtitle": importPDFSubtitle,
+        "importAudio": importAudio,
+        "importAudioSubtitle": importAudioSubtitle,
+        "importSpanishSermons": importSpanishSermons,
+        "importSpanishSermonsSubtitle": importSpanishSermonsSubtitle,
+        "importStatusTitle": importStatusTitle
     ]
 }
 

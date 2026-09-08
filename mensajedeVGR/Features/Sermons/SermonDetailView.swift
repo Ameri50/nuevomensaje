@@ -72,7 +72,7 @@ struct SermonDetailView: View {
                                     .foregroundStyle(.blue)
                                 
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Reproducción de audio")
+                                    Text(localization.getString("sermonAudioPlayback"))
                                         .font(.subheadline)
                                     Text(sermon.code)
                                         .font(.caption)
@@ -103,7 +103,7 @@ struct SermonDetailView: View {
                     // MARK: - Contenido del Mensaje
                     if !sermon.body.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Contenido")
+                            Text(localization.getString("sermonContent"))
                                 .font(.headline)
                             
                             Text(sermon.body)
@@ -116,7 +116,7 @@ struct SermonDetailView: View {
                     
                     // MARK: - Notas
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Mis Notas")
+                        Text(localization.getString("sermonMyNotes"))
                             .font(.headline)
                         
                         TextEditor(text: $note)
@@ -127,7 +127,7 @@ struct SermonDetailView: View {
                         Button(action: saveNote) {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
-                                Text("Guardar Nota")
+                                Text(localization.getString("sermonSaveNote"))
                             }
                             .frame(maxWidth: .infinity)
                             .padding()

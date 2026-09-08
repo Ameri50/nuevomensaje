@@ -62,7 +62,7 @@ struct SettingsView: View {
                                 .font(.system(size: 48))
                                 .foregroundStyle(.blue)
                             
-                            Text("Mensajes de William Branham")
+                            Text(localization.getString("homeTitle"))
                                 .font(.headline)
                             
                             Text(localization.getString("settingsAboutText"))
