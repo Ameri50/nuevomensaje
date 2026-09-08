@@ -20,28 +20,21 @@ struct SettingsView: View {
                     }
                     .tint(.blue)
                 }
-                
                 // MARK: - Idioma
                 Section(header: Text(Strings.get("settingsLanguage", language: localization.currentLanguage))
                     .font(.headline)) {
                     
-                    Picker(Strings.get("settingsLanguage", language: localization.currentLanguage), 
+                    Picker(Strings.get("settingsLanguage", language: localization.currentLanguage),
                            selection: $localization.currentLanguage) {
-                        HStack {
-                            Image(systemName: "es")
-                                .hidden()
-                            Text(Strings.get("settingsSpanish", language: localization.currentLanguage))
-                        }
-                        .tag("es")
+                        Text(Strings.get("settingsSpanish", language: localization.currentLanguage))
+                            .tag("es")
                         
-                        HStack {
-                            Image(systemName: "us")
-                                .hidden()
-                            Text(Strings.get("settingsEnglish", language: localization.currentLanguage))
-                        }
-                        .tag("en")
+                        Text(Strings.get("settingsEnglish", language: localization.currentLanguage))
+                            .tag("en")
                     }
                     .pickerStyle(.segmented)
+                }
+                
                 }
                 
                 // MARK: - Tamaño de Texto
@@ -88,7 +81,7 @@ struct SettingsView: View {
             .preferredColorScheme(localization.isDarkMode ? .dark : .light)
         }
     }
-}
+
 
 #Preview {
     SettingsView()
