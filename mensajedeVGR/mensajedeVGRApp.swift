@@ -12,6 +12,8 @@ import SwiftData
 struct mensajedeVGRApp: App {
     @StateObject private var appState = AppState()
     @StateObject private var localization = LocalizationManager.shared
+    @State private var isSeeding = false
+    @State private var seedDone = false
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -38,13 +40,70 @@ struct mensajedeVGRApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainTabView()
-                .environmentObject(appState)
-                .environmentObject(localization)  // ← AGREGADO: Inyectar LocalizationManager
-                .modelContainer(sharedModelContainer)
-                .onAppear {
-                    DemoLibraryService.shared.seedIfNeeded(context: sharedModelContainer.mainContext)
+            Group {
+                if isSeeding {
+                    SeedingView()
+                        .environmentObject(localization)
+                } else {
+                    MainTabView()
+                        .environmentObject(appState)
+                        .environmentObject(localization)
+                        .modelContainer(sharedModelContainer)
+                }
+            }
+            .modelContainer(sharedModelContainer)
+            .onAppear {
+                let context = sharedModelContainer.mainContext
+                let fetch = FetchDescriptor<SermonRecord>()
+                let hasData = (try? context.fetch(fetch))?.isEmpty == false
+
+                if hasData {
+                    // Ya hay datos, arrancar directamente
+                    seedDone = true
+                } else {
+                    // Primera vez: mostrar pantalla de carga y sembrar en background
+                    isSeeding = true
+                    DemoLibraryService.shared.seedIfNeeded(
+                        context: context,
+                        onComplete: {
+                            withAnimation {
+                                isSeeding = false
+                                seedDone = true
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Splash / Seeding View
+private struct SeedingView: View {
+    @EnvironmentObject private var localization: LocalizationManager
+    @State private var dotCount = 0
+    private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "book.circle.fill")
+                .font(.system(size: 72))
+                .foregroundStyle(.blue)
+
+            Text("Mensajes de William Branham")
+                .font(.title2.bold())
+
+            ProgressView()
+                .scaleEffect(1.5)
+
+            Text("Cargando sermones en español\(String(repeating: ".", count: dotCount))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .onReceive(timer) { _ in
+                    dotCount = (dotCount + 1) % 4
                 }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
 }
