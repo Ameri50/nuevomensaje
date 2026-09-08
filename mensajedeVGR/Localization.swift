@@ -247,6 +247,32 @@ struct Strings {
         "en": "⏳ {done} / {total} sermons..."
     ]
 
+    // MARK: - TTS Player
+    static let ttsPlay = [
+        "es": "Leer en voz alta",
+        "en": "Read Aloud"
+    ]
+    static let ttsPause = [
+        "es": "Pausar",
+        "en": "Pause"
+    ]
+    static let ttsResume = [
+        "es": "Continuar",
+        "en": "Resume"
+    ]
+    static let ttsStop = [
+        "es": "Detener",
+        "en": "Stop"
+    ]
+    static let ttsSpeed = [
+        "es": "Velocidad",
+        "en": "Speed"
+    ]
+    static let ttsListening = [
+        "es": "Leyendo párrafo",
+        "en": "Reading paragraph"
+    ]
+
     // MARK: - Home Example Questions
     static let homeQuestion1 = [
         "es": "¿Qué enseñó Branham sobre la mujer y el hombre?",
@@ -325,7 +351,13 @@ struct Strings {
         "importStatusTitle": importStatusTitle,
         "importStatusLoading": importStatusLoading,
         "importStatusParsed": importStatusParsed,
-        "importStatusProgress": importStatusProgress
+        "importStatusProgress": importStatusProgress,
+        "ttsPlay": ttsPlay,
+        "ttsPause": ttsPause,
+        "ttsResume": ttsResume,
+        "ttsStop": ttsStop,
+        "ttsSpeed": ttsSpeed,
+        "ttsListening": ttsListening
     ]
 }
 
