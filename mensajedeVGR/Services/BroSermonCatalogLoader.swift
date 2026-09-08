@@ -30,6 +30,14 @@ final class BroSermonCatalogLoader {
 
     private let bundleFileName = "bro_branham_sermons"
 
+    static func isGitLFSPointer(_ data: Data) -> Bool {
+        guard let prefix = String(data: data.prefix(200), encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return false
+        }
+        return prefix.lowercased().hasPrefix("version https://git-lfs.github.com/spec/v1")
+    }
+
     func loadCatalog() -> [BroSermonCatalogEntry] {
         if let cached = loadCachedCatalog() {
             return cached
@@ -71,6 +79,12 @@ final class BroSermonCatalogLoader {
         }
 
         guard let data = try? Data(contentsOf: url) else { return nil }
+
+        if Self.isGitLFSPointer(data) {
+            print("⚠️ bro_branham_sermons.json es un puntero de Git LFS sin resolver, corre git lfs pull")
+            return nil
+        }
+
         return parse(data)
     }
 

@@ -1,19 +1,26 @@
 import Foundation
 import Combine
 import SwiftUI
+
 // MARK: - Localization Manager
 class LocalizationManager: ObservableObject {
     static let shared = LocalizationManager()
     
     @Published var currentLanguage: String = UserDefaults.standard.string(forKey: "appLanguage") ?? "es" {
         didSet {
-            UserDefaults.standard.set(currentLanguage, forKey: "appLanguage")
+            if oldValue != currentLanguage {
+                UserDefaults.standard.set(currentLanguage, forKey: "appLanguage")
+                UserDefaults.standard.synchronize()
+                // Notificar a todos los observadores del cambio
+                objectWillChange.send()
+            }
         }
     }
     
     @Published var isDarkMode: Bool = UserDefaults.standard.bool(forKey: "isDarkMode") {
         didSet {
             UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode")
+            UserDefaults.standard.synchronize()
         }
     }
     

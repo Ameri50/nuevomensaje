@@ -3,57 +3,48 @@ import SwiftData
 
 struct SermonsListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var sermons: [SermonRecord]
     @State private var searchText = ""
-
-    private var filteredMessages: [SermonRecord] {
-        let service = DemoLibraryService.shared
-        return service.search(context: modelContext, query: searchText)
+    @EnvironmentObject private var localization: LocalizationManager  // ← CAMBIADO a EnvironmentObject
+    
+    var filteredSermons: [SermonRecord] {
+        if searchText.isEmpty {
+            return sermons
+        } else {
+            return sermons.filter { sermon in
+                sermon.title.localizedCaseInsensitiveContains(searchText) ||
+                sermon.code.localizedCaseInsensitiveContains(searchText)
+            }
+        }
     }
 
     var body: some View {
         NavigationStack {
-            List(filteredMessages) { message in
-                NavigationLink(destination: SermonDetailView(sermon: message)) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(message.code)
+            List {
+                ForEach(filteredSermons) { sermon in
+                    NavigationLink(destination: SermonDetailView(sermon: sermon)) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(sermon.code)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(sermon.title)
                                 .font(.headline)
-                            Spacer()
-                            if message.audioURL != nil {
-                                Image(systemName: "play.circle.fill")
-                                    .foregroundStyle(.blue)
-                            }
+                            Text(sermon.location)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        Text(message.title)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(message.location)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(message.date?.formatted(date: .abbreviated, time: .omitted) ?? "Sin fecha")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
                     }
                 }
             }
-            .listStyle(.plain)
-            .searchable(text: $searchText, prompt: "Buscar por título, código o tema")
-            .navigationTitle("Mensajes")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        searchText = ""
-                    } label: {
-                        Label("Limpiar", systemImage: "xmark.circle")
-                    }
-                }
-            }
+            .searchable(text: $searchText, prompt: localization.getString("homeSearch"))
+            .navigationTitle(localization.getString("tabMessages"))
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
 
 #Preview {
     SermonsListView()
-        .modelContainer(for: [SermonRecord.self, ParagraphRecord.self, FavoriteRecord.self, NoteRecord.self], inMemory: true)
+        .environmentObject(LocalizationManager.shared)
 }

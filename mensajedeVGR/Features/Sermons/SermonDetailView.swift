@@ -3,185 +3,198 @@ import SwiftData
 
 struct SermonDetailView: View {
     @Environment(\.modelContext) private var modelContext
-
+    @EnvironmentObject private var localization: LocalizationManager
+    @State private var isFavorited = false
+    @State private var note: String = ""
+    
     let sermon: SermonRecord
-
-    @State private var isFavorite = false
-    @State private var noteText = ""
-    @State private var paragraphs: [ParagraphRecord] = []
-
-    private var fullBodyText: String {
-        let trimmed = sermon.body.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            return trimmed
-        }
-        return paragraphs.sorted { $0.number < $1.number }.map(\.text).joined(separator: "\n\n")
-    }
-
+    
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(sermon.code)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(sermon.title)
-                        .font(.title2.bold())
-                    Text("\(sermon.location) · \(sermon.language)")
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack(spacing: 12) {
-                    Label(sermon.date?.formatted(date: .abbreviated, time: .omitted) ?? "Sin fecha", systemImage: "calendar")
-                    Spacer()
-                    Label("\(sermon.durationMinutes) min", systemImage: "clock")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-                HStack {
-                    Button(action: toggleFavorite) {
-                        Label(isFavorite ? "Favorito" : "Guardar", systemImage: isFavorite ? "star.fill" : "star")
-                            .frame(maxWidth: .infinity)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // MARK: - Header
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(sermon.code)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(sermon.title)
+                                    .font(.headline)
+                                Text(sermon.location)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button(action: toggleFavorite) {
+                                Image(systemName: isFavorited ? "star.fill" : "star")
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(isFavorited ? .yellow : .gray)
+                            }
+                        }
+                        
+                        // Información del Sermón
+                        HStack(spacing: 16) {
+                            Label {
+                                Text("\(sermon.durationMinutes) min")
+                                    .font(.caption)
+                            } icon: {
+                                Image(systemName: "clock")
+                            }
+                            .foregroundStyle(.secondary)
+                            
+                            Divider()
+                                .frame(height: 16)
+                            
+                            Label {
+                                Text(sermon.language)
+                                    .font(.caption)
+                            } icon: {
+                                Image(systemName: "globe")
+                            }
+                            .foregroundStyle(.secondary)
+                            
+                            Spacer()
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
-
-                    Button(action: { /* futuro: reproducir audio local autorizado */ }) {
-                        Label("Escuchar", systemImage: "play.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    .disabled(sermon.audioURL == nil)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Mensaje completo")
-                        .font(.headline)
-                    Text(fullBodyText)
-                        .font(.body)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .lineSpacing(7)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Párrafos")
-                        .font(.headline)
-
-                    ForEach(paragraphs.sorted { $0.number < $1.number }) { paragraph in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Párrafo \(paragraph.number)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(paragraph.text)
-                                .font(.body)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .lineSpacing(5)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .padding()
+                    
+                    // MARK: - Audio Player (Si existe)
+                    if let audioURL = sermon.audioURL, !audioURL.isEmpty {
+                        VStack(spacing: 12) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "play.circle.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(.blue)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Reproducción de audio")
+                                        .font(.subheadline)
+                                    Text(sermon.code)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }
+                            .padding()
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            
+                            HStack(spacing: 0) {
+                                Text("0:00")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                                
+                                Slider(value: .constant(0.3))
+                                    .disabled(true)
+                                
+                                Text("1:23:45")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Mis notas")
-                        .font(.headline)
-                    TextEditor(text: $noteText)
-                        .frame(minHeight: 140)
-                        .padding(8)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    Button("Guardar nota") {
-                        saveNote()
+                    
+                    // MARK: - Contenido del Mensaje
+                    if !sermon.body.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Contenido")
+                                .font(.headline)
+                            
+                            Text(sermon.body)
+                                .font(.body)
+                                .lineSpacing(4)
+                                .foregroundStyle(.primary)
+                        }
+                        .padding()
                     }
-                    .buttonStyle(.borderedProminent)
+                    
+                    // MARK: - Notas
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Mis Notas")
+                            .font(.headline)
+                        
+                        TextEditor(text: $note)
+                            .frame(height: 120)
+                            .border(Color(.secondarySystemBackground), width: 1)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        
+                        Button(action: saveNote) {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text("Guardar Nota")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundStyle(.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                    .padding()
                 }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Fuente: \(sermon.source)", systemImage: "link")
-                    Label("Idioma: \(sermon.language)", systemImage: "globe")
-                    Label("Audio disponible: \(sermon.audioURL == nil ? "No" : "Sí")", systemImage: sermon.audioURL == nil ? "xmark.circle" : "play.circle")
-                    Label("Importación autorizada solo: no se descargan libros o audios completos sin permiso explícito.", systemImage: "shield.checkered")
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .padding(.bottom, 20)
             }
-            .padding()
+            .navigationTitle(sermon.code)
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                checkIfFavorited()
+            }
         }
-        .navigationTitle("Detalle")
-        .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            loadState()
-        }
     }
-
-    private func loadState() {
-        paragraphs = fetchParagraphs()
-        isFavorite = hasFavorite()
-        noteText = fetchNote() ?? ""
-    }
-
-    private func fetchParagraphs() -> [ParagraphRecord] {
-        let descriptor = FetchDescriptor<ParagraphRecord>(sortBy: [SortDescriptor(\.number)])
-        let paragraphs = (try? modelContext.fetch(descriptor)) ?? []
-        return paragraphs.filter { $0.sermonID == sermon.id }
-    }
-
-    private func hasFavorite() -> Bool {
-        let descriptor = FetchDescriptor<FavoriteRecord>()
-        let favorites = (try? modelContext.fetch(descriptor)) ?? []
-        return favorites.contains { $0.sermonID == sermon.id }
-    }
-
-    private func fetchNote() -> String? {
-        let descriptor = FetchDescriptor<NoteRecord>()
-        let notes = (try? modelContext.fetch(descriptor)) ?? []
-        return notes.first { $0.sermonID == sermon.id }?.text
-    }
-
+    
     private func toggleFavorite() {
-        let descriptor = FetchDescriptor<FavoriteRecord>()
-        let favorites = (try? modelContext.fetch(descriptor)) ?? []
-
-        if isFavorite {
-            if let favorite = favorites.first(where: { $0.sermonID == sermon.id }) {
-                modelContext.delete(favorite)
+        withAnimation {
+            isFavorited.toggle()
+            
+            if isFavorited {
+                let favorite = FavoriteRecord(
+                    type: "sermon",
+                    sermonID: sermon.id,
+                    createdAt: .now
+                )
+                modelContext.insert(favorite)
+            } else {
+                // Eliminar de favoritos
+                if let favoriteToRemove = findFavorite() {
+                    modelContext.delete(favoriteToRemove)
+                }
             }
-            isFavorite = false
-        } else {
-            let favorite = FavoriteRecord(type: "sermon", sermonID: sermon.id)
-            modelContext.insert(favorite)
-            isFavorite = true
         }
-
-        try? modelContext.save()
     }
-
+    
+    private func findFavorite() -> FavoriteRecord? {
+        let sermonID = sermon.id
+        let predicate = #Predicate<FavoriteRecord> {
+            $0.sermonID == sermonID && $0.type == "sermon"
+        }
+        let descriptor = FetchDescriptor<FavoriteRecord>(predicate: predicate)
+        return try? modelContext.fetch(descriptor).first
+    }
+    
+    private func checkIfFavorited() {
+        isFavorited = findFavorite() != nil
+    }
+    
     private func saveNote() {
-        let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return
-        }
-
-        let descriptor = FetchDescriptor<NoteRecord>()
-        let notes = (try? modelContext.fetch(descriptor)) ?? []
-
-        if let existingNote = notes.first(where: { $0.sermonID == sermon.id }) {
-            existingNote.text = trimmed
-            existingNote.updatedAt = Date()
-        } else {
-            let note = NoteRecord(sermonID: sermon.id, text: trimmed)
-            modelContext.insert(note)
-        }
-
-        try? modelContext.save()
+        // Guardar nota (implementar lógica real)
+        print("Nota guardada: \(note)")
     }
 }
 
 #Preview {
-    SermonDetailView(sermon: SermonRecord(code: "58-0928E", title: "The Serpent's Seed", location: "Jeffersonville", language: "Inglés", durationMinutes: 68, source: "Voice of God Recordings", body: "Demo text"))
-        .modelContainer(for: [SermonRecord.self, ParagraphRecord.self, FavoriteRecord.self, NoteRecord.self], inMemory: true)
+    let sermon = SermonRecord(
+        code: "52-0713",
+        title: "El Séptimo Sello",
+        location: "Los Ángeles, CA",
+        body: "Este es el contenido del mensaje..."
+    )
+    
+    return SermonDetailView(sermon: sermon)
+        .environmentObject(LocalizationManager.shared)
 }

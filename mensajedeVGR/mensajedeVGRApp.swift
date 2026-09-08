@@ -11,6 +11,7 @@ import SwiftData
 @main
 struct mensajedeVGRApp: App {
     @StateObject private var appState = AppState()
+    @StateObject private var localization = LocalizationManager.shared
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -39,6 +40,7 @@ struct mensajedeVGRApp: App {
         WindowGroup {
             MainTabView()
                 .environmentObject(appState)
+                .environmentObject(localization)  // ← AGREGADO: Inyectar LocalizationManager
                 .modelContainer(sharedModelContainer)
                 .onAppear {
                     DemoLibraryService.shared.seedIfNeeded(context: sharedModelContainer.mainContext)

@@ -4,23 +4,23 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var searchText = ""
-    @ObservedObject private var localization = LocalizationManager.shared
+    @EnvironmentObject private var localization: LocalizationManager  // ← CAMBIADO a EnvironmentObject
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(Strings.get("homeTitle", language: localization.currentLanguage))
+                        Text(localization.getString("homeTitle"))
                             .font(.largeTitle.bold())
-                        Text(Strings.get("homeSubtitle", language: localization.currentLanguage))
+                        Text(localization.getString("homeSubtitle"))
                     }
                     .padding(.horizontal)
 
-                    SearchBar(text: $searchText, placeholder: Strings.get("homeSearch", language: localization.currentLanguage))
+                    SearchBar(text: $searchText, placeholder: localization.getString("homeSearch"))
 
                     if let featuredMessage = defaultMessage() {
-                        HomeSection(title: "Continuar leyendo") {
+                        HomeSection(title: localization.getString("homeContinueReading")) {
                             NavigationLink(destination: SermonDetailView(sermon: featuredMessage)) {
                                 HStack(spacing: 12) {
                                     RoundedRectangle(cornerRadius: 12)
@@ -44,19 +44,19 @@ struct HomeView: View {
                         }
                     }
 
-                    HomeSection(title: "Mensajes recientes") {
+                    HomeSection(title: localization.getString("homeRecentMessages")) {
                         MessageCardRow(messages: demoMessages())
                     }
 
-                    HomeSection(title: "Fuentes autorizadas") {
+                    HomeSection(title: localization.getString("homeAuthorizedSources")) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("La biblioteca solo debe incluir audios, PDFs y transcripciones que el usuario tenga autorización para usar.")
+                            Text(localization.getString("homeAuthorizationNote"))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                            Text("Fuente referencial: branham.org/es/messageaudio")
+                            Text(localization.getString("homeReferenceSource"))
                                 .font(.caption)
                                 .foregroundStyle(.blue)
-                            Text("Importar contenido protegido sin autorización no está permitido.")
+                            Text(localization.getString("homeUnauthorizedWarning"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -67,7 +67,7 @@ struct HomeView: View {
                         .padding(.horizontal)
                     }
 
-                    HomeSection(title: "Pregúntale a los Mensajes") {
+                    HomeSection(title: localization.getString("homeAskMessages")) {
                         VStack(alignment: .leading, spacing: 10) {
                             ForEach(exampleQuestions, id: \ .self) { question in
                                 Button(action: {}) {
@@ -84,7 +84,7 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 30)
             }
-            .navigationTitle("Inicio")
+            .navigationTitle(localization.getString("homeTitle"))
         }
     }
 
@@ -155,4 +155,5 @@ private let exampleQuestions = [
 
 #Preview {
     HomeView()
+        .environmentObject(LocalizationManager.shared)
 }
