@@ -115,9 +115,12 @@ extension SpeechManager: AVSpeechSynthesizerDelegate {
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer,
                                        didCancel utterance: AVSpeechUtterance) {
+        // Leer isSpeaking de forma síncrona para no capturar `synthesizer`
+        // (no Sendable) dentro de la closure @Sendable del Task.
+        let stillSpeaking = synthesizer.isSpeaking
         Task { @MainActor in
             // Solo limpiar si no fue una transición interna (skipTo*)
-            if !synthesizer.isSpeaking {
+            if !stillSpeaking {
                 self.isPlaying = false
                 self.isPaused = false
             }

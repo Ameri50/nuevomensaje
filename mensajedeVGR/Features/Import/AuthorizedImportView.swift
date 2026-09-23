@@ -8,8 +8,7 @@ struct AuthorizedImportView: View {
     @State private var importStatus: String = ""
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 20) {
+        VStack(spacing: 20) {
                 // MARK: - Encabezado
                 VStack(alignment: .leading, spacing: 8) {
                     Text(localization.getString("homeTitle"))
@@ -123,7 +122,6 @@ struct AuthorizedImportView: View {
             }
             .navigationTitle(localization.getString("tabImport"))
             .navigationBarTitleDisplayMode(.inline)
-        }
     }
     
     private func importarSermonesEspanol() {
@@ -172,6 +170,8 @@ struct AuthorizedImportView: View {
 }
 
 #Preview {
-    AuthorizedImportView()
+    NavigationStack {
+        AuthorizedImportView()
+    }
         .environmentObject(LocalizationManager.shared)
 }

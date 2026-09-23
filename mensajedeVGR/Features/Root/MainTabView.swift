@@ -24,23 +24,17 @@ struct MainTabView: View {
                 }
                 .tag(2)
 
-            AuthorizedImportView()
-                .tabItem {
-                    Label(localization.getString("tabImport"), systemImage: "arrow.down.doc.fill")
-                }
-                .tag(3)
-
             AIChatView()
                 .tabItem {
                     Label(localization.getString("tabAI"), systemImage: "sparkles")
                 }
-                .tag(4)
-            
+                .tag(3)
+
             SettingsView()
                 .tabItem {
                     Label(localization.getString("tabSettings"), systemImage: "gear")
                 }
-                .tag(5)
+                .tag(4)
         }
         .tint(.blue)
         .preferredColorScheme(localization.isDarkMode ? .dark : .light)

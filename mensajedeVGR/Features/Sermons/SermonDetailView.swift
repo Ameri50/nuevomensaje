@@ -5,10 +5,12 @@ import WebKit
 struct SermonDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var localization: LocalizationManager
+    @EnvironmentObject private var appState: AppState
     @StateObject private var speech = SpeechManager.shared
     @State private var isFavorited = false
     @State private var note: String = ""
     @State private var showAudioPlayer = false
+    @State private var showQnA = false
 
     let sermon: SermonRecord
 
@@ -26,6 +28,11 @@ struct SermonDetailView: View {
         let code = sermon.code.trimmingCharacters(in: .whitespaces)
         return URL(string: "https://branham.org/es/messageaudio/\(lang)/\(code)")
             ?? URL(string: "https://branham.org/es/messageaudio")!
+    }
+
+    /// Audio oficial (m4a del CDN de branham.org) resuelto por código.
+    private var officialAudio: BranhamAudioEntry? {
+        BranhamAudioCatalog.shared.entry(for: sermon.code)
     }
 
     var body: some View {
@@ -81,56 +88,72 @@ struct SermonDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(.horizontal)
 
-                    // MARK: - Audio Panel (branham.org)
+                    // MARK: - Audio oficial (branham.org)
                     VStack(spacing: 8) {
-                        // Botón principal de audio — SIEMPRE visible
-                        Link(destination: branhamAudioURL) {
-                            HStack(spacing: 14) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.blue)
-                                        .frame(width: 48, height: 48)
-                                    Image(systemName: "headphones")
-                                        .font(.system(size: 22))
-                                        .foregroundStyle(.white)
-                                }
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(localization.getString("sermonAudioPlayback"))
-                                        .font(.subheadline.bold())
-                                        .foregroundStyle(.primary)
-                                    Text("Abrir en branham.org →")
-                                        .font(.caption)
-                                        .foregroundStyle(.blue)
-                                }
-                                Spacer()
-                                Image(systemName: "arrow.up.right.square")
-                                    .foregroundStyle(.blue)
-                                    .font(.system(size: 18))
-                            }
-                            .padding()
-                            .background(Color(.secondarySystemBackground))
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                        }
+                        if let officialAudio {
+                            // Reproductor nativo que transmite el .m4a oficial
+                            OfficialAudioPlayerView(entry: officialAudio)
 
-                        // Panel WebView embebido (colapsable)
-                        Button(action: { withAnimation { showAudioPlayer.toggle() } }) {
-                            HStack {
-                                Image(systemName: showAudioPlayer ? "chevron.up.circle" : "chevron.down.circle")
-                                    .foregroundStyle(.secondary)
-                                Text(showAudioPlayer ? "Cerrar reproductor" : "Abrir reproductor aquí")
+                            if let stream = officialAudio.streamURL {
+                                Link(destination: stream) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "arrow.up.right.square")
+                                        Text("Abrir en branham.org")
+                                    }
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
+                                    .foregroundStyle(.blue)
+                                }
+                                .padding(.horizontal, 4)
                             }
-                            .padding(.horizontal, 4)
-                        }
-                        .buttonStyle(.plain)
+                        } else {
+                            // Sin entrada oficial: enlace + WebView embebido
+                            Link(destination: branhamAudioURL) {
+                                HStack(spacing: 14) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color.blue)
+                                            .frame(width: 48, height: 48)
+                                        Image(systemName: "headphones")
+                                            .font(.system(size: 22))
+                                            .foregroundStyle(.white)
+                                    }
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(localization.getString("sermonAudioPlayback"))
+                                            .font(.subheadline.bold())
+                                            .foregroundStyle(.primary)
+                                        Text("Abrir en branham.org →")
+                                            .font(.caption)
+                                            .foregroundStyle(.blue)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right.square")
+                                        .foregroundStyle(.blue)
+                                        .font(.system(size: 18))
+                                }
+                                .padding()
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            }
 
-                        if showAudioPlayer {
-                            WebPlayerView(url: branhamAudioURL)
-                                .frame(height: 480)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .transition(.opacity.combined(with: .move(edge: .top)))
+                            Button(action: { withAnimation { showAudioPlayer.toggle() } }) {
+                                HStack {
+                                    Image(systemName: showAudioPlayer ? "chevron.up.circle" : "chevron.down.circle")
+                                        .foregroundStyle(.secondary)
+                                    Text(showAudioPlayer ? "Cerrar reproductor" : "Abrir reproductor aquí")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 4)
+                            }
+                            .buttonStyle(.plain)
+
+                            if showAudioPlayer {
+                                WebPlayerView(url: branhamAudioURL)
+                                    .frame(height: 480)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -157,6 +180,7 @@ struct SermonDetailView: View {
                                 NumberedParagraphView(
                                     number: index + 1,
                                     text: text,
+                                    fontSize: appState.readingFontSize,
                                     isActive: speech.currentParagraphIndex == index,
                                     onTap: {
                                         speech.speak(
@@ -200,6 +224,18 @@ struct SermonDetailView: View {
             }
             .navigationTitle(sermon.code)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: { showQnA = true }) {
+                        Image(systemName: "questionmark.bubble")
+                    }
+                    .accessibilityLabel(localization.getString("sermonQATitle"))
+                }
+            }
+            .sheet(isPresented: $showQnA) {
+                SermonQnAView(sermon: sermon)
+                    .environmentObject(localization)
+            }
             .onAppear { checkIfFavorited() }
             .onDisappear { speech.stop() }
         }
@@ -333,6 +369,7 @@ private struct TTSPlayerView: View {
 private struct NumberedParagraphView: View {
     let number: Int
     let text: String
+    var fontSize: Double = 17
     let isActive: Bool
     let onTap: () -> Void
 
@@ -347,7 +384,7 @@ private struct NumberedParagraphView: View {
 
             // Texto
             Text(text)
-                .font(.body)
+                .font(.system(size: fontSize))
                 .lineSpacing(4)
                 .foregroundStyle(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -369,9 +406,9 @@ private struct NumberedParagraphView: View {
         code: "58-0312",
         title: "Jesucristo Es El Mismo Ayer, Hoy, y Por Los Siglos",
         location: "Harrisonburg, Virginia",
-        body: "Gracias, hermano. Pueden tomar asiento.\n\nEste es un gran privilegio que esperaba desde hace algún tiempo.\n\nAhora, no queremos tomar mucho tiempo, porque el Sr. Vayle y los demás hablarán.\n\nCreemos que primero el hombre debe de nacer de nuevo.",
-        language: "Español"
+        language: "Español", body: "Gracias, hermano. Pueden tomar asiento.\n\nEste es un gran privilegio que esperaba desde hace algún tiempo.\n\nAhora, no queremos tomar mucho tiempo, porque el Sr. Vayle y los demás hablarán.\n\nCreemos que primero el hombre debe de nacer de nuevo."
     )
-    return SermonDetailView(sermon: sermon)
+    SermonDetailView(sermon: sermon)
         .environmentObject(LocalizationManager.shared)
+        .environmentObject(AppState())
 }
