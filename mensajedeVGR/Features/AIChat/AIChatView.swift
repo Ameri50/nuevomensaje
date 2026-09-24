@@ -1,49 +1,32 @@
 import SwiftUI
 import SwiftData
 
-/// Pon aquí tu API key de Gemini (o mejor, cárgala desde Info.plist /
-/// tu Cloud Function proxy con App Check, como en tus otros proyectos).
-enum GeminiConfig {
-    static let apiKey: String = "TU_API_KEY_DE_GEMINI"
-}
-
-/// Palabras muy comunes en español que no aportan nada a la búsqueda
-/// (si no las filtramos, "Donde" o "habla" dominan el ranking y ensucian
-/// los resultados).
-private let palabrasVacias: Set<String> = [
-    "donde", "dónde", "que", "qué", "habla", "hablan", "cual", "cuál",
-    "como", "cómo", "cuando", "cuándo", "para", "por", "con", "los",
-    "las", "del", "una", "uno", "esta", "este", "sobre", "acerca"
-]
-
 struct AIChatView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \AIChatMessage.timestamp, order: .reverse) private var messages: [AIChatMessage]
+    @Query(sort: \AIChatMessage.timestamp, order: .forward) private var messages: [AIChatMessage]
     @EnvironmentObject private var localization: LocalizationManager
     @State private var inputText: String = ""
     @State private var isLoading = false
-    @State private var errorMensaje: String?
-
+    @State private var errorMessage: String? = nil
+    @State private var showDeleteConfirmation = false
+    
+    // ✅ Instancia del servicio Gemini - lee desde Secrets.swift via GeminiConfig
     private let geminiService = GeminiService(apiKey: GeminiConfig.apiKey)
-
-    /// Máximo de párrafos que se mandan como contexto (para no pasarse de tokens).
-    private let maxParrafosContexto = 8
-    /// Máximo de caracteres por párrafo dentro del contexto.
-    private let maxCaracteresPorParrafo = 600
-
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // MARK: - Chat Messages
                 if messages.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "bubble.right")
                             .font(.system(size: 48))
                             .foregroundStyle(.blue)
-
+                        
                         Text(localization.getString("homeAskMessages"))
                             .font(.headline)
-
-                        Text(localization.getString("aiChatHint"))
+                        
+                        Text("Haz preguntas sobre los mensajes de William Branham")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -51,32 +34,63 @@ struct AIChatView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color(.systemBackground))
                 } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            ForEach(messages.reversed()) { message in
-                                ChatBubble(message: message)
+                    ScrollViewReader { scrollProxy in
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                ForEach(messages) { message in
+                                    ChatBubble(message: message)
+                                        .id(message.id)
+                                }
+                            }
+                            .padding()
+                        }
+                        .onChange(of: messages.count) { oldCount, newCount in
+                            if newCount > oldCount, let lastMessage = messages.last {
+                                withAnimation {
+                                    scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                                }
                             }
                         }
+                    }
+                }
+                
+                // MARK: - Error Alert
+                if let error = errorMessage {
+                    VStack(spacing: 8) {
+                        HStack {
+                            Image(systemName: "exclamationmark.circle.fill")
+                                .foregroundStyle(.red)
+                            Text(error)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                            Spacer()
+                            Button(action: { errorMessage = nil }) {
+                                Image(systemName: "xmark")
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                            }
+                        }
+                        .padding(12)
+                        .background(Color.red.opacity(0.1))
+                        .cornerRadius(8)
                         .padding()
                     }
                 }
-
-                if let errorMensaje {
-                    Text(errorMensaje)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal)
-                }
-
+                
+                // MARK: - Input Area
                 VStack(spacing: 0) {
                     Divider()
-
+                    
                     HStack(spacing: 12) {
-                        TextField(localization.getString("aiChatPlaceholder"), text: $inputText)
+                        TextField("Pregunta...", text: $inputText)
                             .textFieldStyle(.roundedBorder)
                             .disabled(isLoading)
-
-                        Button(action: sendMessage) {
+                        
+                        Button(action: {
+                            Task {
+                                await sendMessage()
+                            }
+                        }) {
                             if isLoading {
                                 ProgressView()
                                     .frame(width: 44, height: 44)
@@ -89,121 +103,171 @@ struct AIChatView: View {
                                     .clipShape(Circle())
                             }
                         }
-                        .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || isLoading)
+                        .disabled(inputText.isEmpty || isLoading)
                     }
                     .padding()
                 }
             }
             .navigationTitle(localization.getString("tabAI"))
             .navigationBarTitleDisplayMode(.inline)
-        }
-    }
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    ShareLink(item: conversationText) {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .disabled(messages.isEmpty)
+                    .accessibilityLabel("Compartir conversación")
 
-    private func sendMessage() {
-        let pregunta = inputText.trimmingCharacters(in: .whitespaces)
-        guard !pregunta.isEmpty else { return }
-
-        errorMensaje = nil
-        isLoading = true
-        inputText = ""
-
-        let userMessage = AIChatMessage(role: "user", text: pregunta, timestamp: .now, sourceSummary: "")
-        modelContext.insert(userMessage)
-        try? modelContext.save()
-
-        Task {
-            do {
-                let (contexto, resumenFuentes) = buscarContextoReal(query: pregunta)
-                let resultado = try await geminiService.ask(prompt: pregunta, context: contexto)
-
-                await MainActor.run {
-                    let aiResponse = AIChatMessage(
-                        role: "assistant",
-                        text: resultado.respuesta,
-                        timestamp: .now,
-                        sourceSummary: resultado.noEncontrado ? "" : resumenFuentes
-                    )
-                    modelContext.insert(aiResponse)
-                    try? modelContext.save()
-                    isLoading = false
+                    Button {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .disabled(messages.isEmpty || isLoading)
+                    .accessibilityLabel("Eliminar conversación")
                 }
-            } catch {
-                await MainActor.run {
-                    errorMensaje = "No se pudo consultar la IA: \(error.localizedDescription)"
-                    isLoading = false
-                }
+            }
+            .confirmationDialog("¿Eliminar conversación?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+                Button("Eliminar", role: .destructive, action: deleteConversation)
+                Button("Cancelar", role: .cancel) { }
+            } message: {
+                Text("Se eliminarán todas las preguntas y respuestas guardadas.")
             }
         }
     }
 
-    /// Busca directamente por PALABRAS CLAVE dentro de los párrafos reales
-    /// (no por la pregunta completa como frase literal, que casi nunca
-    /// coincide) y arma el contexto que se le manda a Gemini.
-    private func buscarContextoReal(query: String) -> (contexto: String, resumenFuentes: String) {
-        let terminos = query
-            .lowercased()
-            .folding(options: .diacriticInsensitive, locale: .current)
-            .components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { $0.count > 2 && !palabrasVacias.contains($0) }
-
-        guard !terminos.isEmpty else { return ("", "") }
-
-        let fetch = FetchDescriptor<ParagraphRecord>()
-        let todosLosParrafos = (try? modelContext.fetch(fetch)) ?? []
-
-        let parrafosCandidatos = todosLosParrafos
-            .map { parrafo in (parrafo: parrafo, puntaje: puntaje(texto: parrafo.text, terminos: terminos)) }
-            .filter { $0.puntaje > 0 }
-            .sorted { $0.puntaje > $1.puntaje }
-            .prefix(maxParrafosContexto)
-
-        guard !parrafosCandidatos.isEmpty else { return ("", "") }
-
-        var contexto = ""
-        var idsSermonesUsados: Set<UUID> = []
-
-        for candidato in parrafosCandidatos {
-            let textoRecortado = String(candidato.parrafo.text.prefix(maxCaracteresPorParrafo))
-            contexto += "[Párrafo \(candidato.parrafo.number)] \(textoRecortado)\n\n"
-            idsSermonesUsados.insert(candidato.parrafo.sermonID)
-        }
-
-        let sermonFetch = FetchDescriptor<SermonRecord>()
-        let todosLosSermones = (try? modelContext.fetch(sermonFetch)) ?? []
-        let codigosUsados = todosLosSermones
-            .filter { idsSermonesUsados.contains($0.id) }
-            .map { $0.code }
-            .sorted()
-
-        let resumenFuentes = codigosUsados.isEmpty ? "" : "Fuentes: \(codigosUsados.joined(separator: ", "))"
-        return (contexto, resumenFuentes)
+    private var conversationText: String {
+        messages.map { message in
+            "\(message.role == "user" ? "Pregunta" : "Respuesta"):\n\(message.text)"
+        }.joined(separator: "\n\n")
     }
 
-    private func puntaje(texto: String, terminos: [String]) -> Int {
-        let textoLower = texto
-            .lowercased()
-            .folding(options: .diacriticInsensitive, locale: .current)
-        return terminos.reduce(0) { total, termino in
-            total + (textoLower.contains(termino) ? 1 : 0)
+    private func deleteConversation() {
+        for message in messages {
+            modelContext.delete(message)
         }
+        try? modelContext.save()
+        errorMessage = nil
+    }
+    
+    // ✅ Función que llama a Gemini de verdad
+    private func sendMessage() async {
+        let userInput = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !userInput.isEmpty else { return }
+        
+        isLoading = true
+        errorMessage = nil
+        
+        // Guardar mensaje del usuario
+        let userMessage = AIChatMessage(
+            role: "user",
+            text: userInput,
+            timestamp: .now,
+            sourceSummary: ""
+        )
+        modelContext.insert(userMessage)
+        inputText = ""
+        
+        // Obtener contexto de los sermones
+        let context = getContextFromSermons(query: userInput)
+        
+        // ✅ LLAMADA REAL A GEMINI
+        do {
+            // GeminiService.ask() retorna GeminiResponse
+            let geminiResponse = try await geminiService.ask(prompt: userInput, context: context)
+            
+            // ✅ Acceder al campo .respuesta de GeminiResponse
+            let aiMessage = AIChatMessage(
+                role: "assistant",
+                text: geminiResponse.respuesta,
+                timestamp: .now,
+                sourceSummary: ""
+            )
+            modelContext.insert(aiMessage)
+        } catch let error as GeminiServiceError {
+            errorMessage = error.errorDescription ?? "No se pudo obtener una respuesta."
+        } catch {
+            errorMessage = "No se pudo obtener una respuesta. Comprueba la conexión e inténtalo de nuevo."
+        }
+        
+        isLoading = false
+    }
+    
+    // Obtener contexto de sermones para pasar a Gemini
+    private func getContextFromSermons(query: String) -> String {
+        let sermons = DemoLibraryService.shared.allMessages(context: modelContext)
+        let terms = searchTerms(from: query)
+
+        let rankedSermons: [(sermon: SermonRecord, score: Int)] = sermons
+            .map { sermon in
+                let searchableText = normalized("\(sermon.title) \(sermon.code) \(sermon.location) \(sermon.body)")
+                let score = terms.reduce(into: 0) { result, term in
+                    if searchableText.contains(term) { result += 1 }
+                }
+                return (sermon, score)
+            }
+            .sorted { first, second in
+                if first.score == second.score {
+                    return first.sermon.title < second.sermon.title
+                }
+                return first.score > second.score
+            }
+
+        let selectedSermons = rankedSermons.filter { $0.score > 0 }.prefix(8)
+        let fallbackSermons = selectedSermons.isEmpty ? rankedSermons.prefix(6) : selectedSermons
+
+        let context = fallbackSermons.map { item in
+            let paragraphs = item.sermon.body.components(separatedBy: "\n\n")
+            let relevantParagraphs = paragraphs.enumerated().filter { _, paragraph in
+                terms.isEmpty || terms.contains { normalized(paragraph).contains($0) }
+            }
+            let paragraphsToInclude = relevantParagraphs.isEmpty
+                ? Array(paragraphs.prefix(6).enumerated())
+                : Array(relevantParagraphs.prefix(12))
+            let formattedParagraphs = paragraphsToInclude
+                .map { "[Sermón: \(item.sermon.code)] [Párrafo: \($0.offset + 1)] \($0.element)" }
+                .joined(separator: "\n")
+            return "[Sermón: \(item.sermon.code)] \(item.sermon.title)\n\(formattedParagraphs)"
+        }.joined(separator: "\n\n")
+
+        return String(context.prefix(24000))
+    }
+
+    private func searchTerms(from query: String) -> [String] {
+        let stopWords: Set<String> = [
+            "a", "al", "como", "con", "cual", "cuando", "de", "del", "donde",
+            "el", "en", "es", "esta", "estas", "este", "esto", "hay", "la", "las",
+            "lo", "los", "me", "para", "por", "que", "se", "sobre", "su", "un", "una",
+            "y"
+        ]
+
+        return normalized(query)
+            .split(whereSeparator: { $0.isWhitespace || $0.isPunctuation })
+            .map(String.init)
+            .filter { $0.count >= 3 && !stopWords.contains($0) }
+    }
+
+    private func normalized(_ value: String) -> String {
+        value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
     }
 }
 
 // MARK: - Chat Bubble Component
-
 struct ChatBubble: View {
     let message: AIChatMessage
-
+    
     var isUser: Bool {
         message.role == "user"
     }
-
+    
     var body: some View {
         HStack(spacing: 0) {
             if isUser {
                 Spacer()
             }
-
+            
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
                 Text(message.text)
                     .font(.body)
@@ -211,14 +275,14 @@ struct ChatBubble: View {
                     .background(isUser ? Color.blue : Color(.secondarySystemBackground))
                     .foregroundStyle(isUser ? .white : .primary)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
-
+                
                 if !message.sourceSummary.isEmpty {
                     Text(message.sourceSummary)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-
+            
             if !isUser {
                 Spacer()
             }
