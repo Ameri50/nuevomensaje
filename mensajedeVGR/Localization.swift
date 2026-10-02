@@ -136,6 +136,26 @@ struct Strings {
         "es": "Versión 1.0\n\nAplicación de estudio de los mensajes de William Branham.",
         "en": "Version 1.0\n\nApplication to study the messages of William Branham."
     ]
+    static let settingsData = [
+        "es": "Datos",
+        "en": "Data"
+    ]
+    static let settingsExport = [
+        "es": "Exportar biblioteca",
+        "en": "Export library"
+    ]
+    static let settingsExportSubtitle = [
+        "es": "Guardar o compartir tus mensajes, notas y favoritos en un archivo",
+        "en": "Save or share your messages, notes and favorites as a file"
+    ]
+    static let settingsExportEmpty = [
+        "es": "No hay mensajes para exportar todavía.",
+        "en": "There are no messages to export yet."
+    ]
+    static let settingsExportDone = [
+        "es": "✅ {n} mensajes exportados.",
+        "en": "✅ {n} messages exported."
+    ]
     
     // MARK: - Common
     static let ok = [
@@ -158,7 +178,183 @@ struct Strings {
         "es": "Buscar",
         "en": "Search"
     ]
-    
+
+    // MARK: - Sermon Detail View
+    static let sermonAudioPlayback = [
+        "es": "Reproducción de audio",
+        "en": "Audio Playback"
+    ]
+    static let sermonContent = [
+        "es": "Contenido",
+        "en": "Content"
+    ]
+    static let sermonMyNotes = [
+        "es": "Mis Notas",
+        "en": "My Notes"
+    ]
+    static let sermonSaveNote = [
+        "es": "Guardar Nota",
+        "en": "Save Note"
+    ]
+    static let sermonQATitle = [
+        "es": "Preguntar al mensaje",
+        "en": "Ask the message"
+    ]
+    static let sermonQAPlaceholder = [
+        "es": "Escribe tu pregunta sobre este mensaje…",
+        "en": "Ask a question about this message…"
+    ]
+    static let sermonQAAsk = [
+        "es": "Preguntar",
+        "en": "Ask"
+    ]
+    static let sermonQAThinking = [
+        "es": "Buscando citas en el mensaje…",
+        "en": "Searching quotes in the message…"
+    ]
+    static let sermonQAQuotes = [
+        "es": "Citas textuales del mensaje",
+        "en": "Verbatim quotes from the message"
+    ]
+    static let sermonQAParagraph = [
+        "es": "Párrafo",
+        "en": "Paragraph"
+    ]
+    static let sermonQAEmpty = [
+        "es": "Haz una pregunta y la app mostrará el texto exacto del mensaje, con su número de párrafo.",
+        "en": "Ask a question and the app will show the exact text of the message, with its paragraph number."
+    ]
+
+    // MARK: - Favorites View
+    static let favoritesEmpty = [
+        "es": "Sin favoritos",
+        "en": "No favorites"
+    ]
+    static let favoritesEmptyHint = [
+        "es": "Agrega mensajes a favoritos para verlos aquí",
+        "en": "Add messages to favorites to see them here"
+    ]
+    static let favoritesParagraph = [
+        "es": "Párrafo",
+        "en": "Paragraph"
+    ]
+
+    // MARK: - AI Chat View
+    static let aiChatHint = [
+        "es": "Haz preguntas sobre los mensajes de William Branham",
+        "en": "Ask questions about William Branham's messages"
+    ]
+    static let aiChatPlaceholder = [
+        "es": "Pregunta...",
+        "en": "Ask..."
+    ]
+    static let aiChatProcessing = [
+        "es": "Procesando tu pregunta...",
+        "en": "Processing your question..."
+    ]
+    static let aiChatClear = [
+        "es": "Borrar conversación",
+        "en": "Clear conversation"
+    ]
+    static let aiChatClearConfirm = [
+        "es": "¿Eliminar todos los mensajes de este chat?",
+        "en": "Delete all messages in this chat?"
+    ]
+    static let aiChatYou = [
+        "es": "Tú",
+        "en": "You"
+    ]
+    static let aiChatAI = [
+        "es": "IA",
+        "en": "AI"
+    ]
+
+    // MARK: - Import View
+    static let importPDF = [
+        "es": "Importar PDF",
+        "en": "Import PDF"
+    ]
+    static let importPDFSubtitle = [
+        "es": "Documentos autorizados",
+        "en": "Authorized documents"
+    ]
+    static let importAudio = [
+        "es": "Importar Audio",
+        "en": "Import Audio"
+    ]
+    static let importAudioSubtitle = [
+        "es": "Archivos MP3/M4A",
+        "en": "MP3/M4A files"
+    ]
+    static let importSpanishSermons = [
+        "es": "Importar sermones en español",
+        "en": "Import Spanish sermons"
+    ]
+    static let importSpanishSermonsSubtitle = [
+        "es": "Desde bro_branham_sermons_es.json",
+        "en": "From bro_branham_sermons_es.json"
+    ]
+    static let importStatusTitle = [
+        "es": "Estado de Importación",
+        "en": "Import Status"
+    ]
+    static let importStatusLoading = [
+        "es": "⏳ Leyendo archivo...",
+        "en": "⏳ Reading file..."
+    ]
+    static let importStatusParsed = [
+        "es": "⏳ Importando {n} sermones...",
+        "en": "⏳ Importing {n} sermons..."
+    ]
+    static let importStatusProgress = [
+        "es": "⏳ {done} / {total} sermones...",
+        "en": "⏳ {done} / {total} sermons..."
+    ]
+
+    // MARK: - TTS Player
+    static let ttsPlay = [
+        "es": "Leer en voz alta",
+        "en": "Read Aloud"
+    ]
+    static let ttsPause = [
+        "es": "Pausar",
+        "en": "Pause"
+    ]
+    static let ttsResume = [
+        "es": "Continuar",
+        "en": "Resume"
+    ]
+    static let ttsStop = [
+        "es": "Detener",
+        "en": "Stop"
+    ]
+    static let ttsSpeed = [
+        "es": "Velocidad",
+        "en": "Speed"
+    ]
+    static let ttsListening = [
+        "es": "Leyendo párrafo",
+        "en": "Reading paragraph"
+    ]
+
+    // MARK: - Home Example Questions
+    static let homeQuestion1 = [
+        "es": "¿Qué enseñó Branham sobre la mujer y el hombre?",
+        "en": "What did Branham teach about women and men?"
+    ]
+    static let homeQuestion2 = [
+        "es": "¿Qué dijo sobre la serpiente?",
+        "en": "What did he say about the serpent?"
+    ]
+    static let homeQuestion3 = [
+        "es": "¿Dónde habló sobre Daniel?",
+        "en": "Where did he speak about Daniel?"
+    ]
+    static let homeQuestion4 = [
+        "es": "Busca todos los mensajes donde menciona Génesis 3.",
+        "en": "Find all messages where he mentions Genesis 3."
+    ]
+
     // MARK: - Getter
     static func get(_ key: String, language: String) -> String {
         let dict = stringDictionary[key] ?? [:]
@@ -182,6 +378,10 @@ struct Strings {
         "homeReferenceSource": homeReferenceSource,
         "homeUnauthorizedWarning": homeUnauthorizedWarning,
         "homeAskMessages": homeAskMessages,
+        "homeQuestion1": homeQuestion1,
+        "homeQuestion2": homeQuestion2,
+        "homeQuestion3": homeQuestion3,
+        "homeQuestion4": homeQuestion4,
         "settingsTitle": settingsTitle,
         "settingsAppearance": settingsAppearance,
         "settingsDarkMode": settingsDarkMode,
@@ -191,11 +391,53 @@ struct Strings {
         "settingsTextSize": settingsTextSize,
         "settingsAbout": settingsAbout,
         "settingsAboutText": settingsAboutText,
+        "settingsData": settingsData,
+        "settingsExport": settingsExport,
+        "settingsExportSubtitle": settingsExportSubtitle,
+        "settingsExportEmpty": settingsExportEmpty,
+        "settingsExportDone": settingsExportDone,
         "ok": ok,
         "cancel": cancel,
         "save": save,
         "close": close,
-        "search": search
+        "search": search,
+        "sermonAudioPlayback": sermonAudioPlayback,
+        "sermonContent": sermonContent,
+        "sermonMyNotes": sermonMyNotes,
+        "sermonSaveNote": sermonSaveNote,
+        "sermonQATitle": sermonQATitle,
+        "sermonQAPlaceholder": sermonQAPlaceholder,
+        "sermonQAAsk": sermonQAAsk,
+        "sermonQAThinking": sermonQAThinking,
+        "sermonQAQuotes": sermonQAQuotes,
+        "sermonQAParagraph": sermonQAParagraph,
+        "sermonQAEmpty": sermonQAEmpty,
+        "favoritesEmpty": favoritesEmpty,
+        "favoritesEmptyHint": favoritesEmptyHint,
+        "favoritesParagraph": favoritesParagraph,
+        "aiChatHint": aiChatHint,
+        "aiChatPlaceholder": aiChatPlaceholder,
+        "aiChatProcessing": aiChatProcessing,
+        "aiChatClear": aiChatClear,
+        "aiChatClearConfirm": aiChatClearConfirm,
+        "aiChatYou": aiChatYou,
+        "aiChatAI": aiChatAI,
+        "importPDF": importPDF,
+        "importPDFSubtitle": importPDFSubtitle,
+        "importAudio": importAudio,
+        "importAudioSubtitle": importAudioSubtitle,
+        "importSpanishSermons": importSpanishSermons,
+        "importSpanishSermonsSubtitle": importSpanishSermonsSubtitle,
+        "importStatusTitle": importStatusTitle,
+        "importStatusLoading": importStatusLoading,
+        "importStatusParsed": importStatusParsed,
+        "importStatusProgress": importStatusProgress,
+        "ttsPlay": ttsPlay,
+        "ttsPause": ttsPause,
+        "ttsResume": ttsResume,
+        "ttsStop": ttsStop,
+        "ttsSpeed": ttsSpeed,
+        "ttsListening": ttsListening
     ]
 }
 

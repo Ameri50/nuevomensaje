@@ -1,6 +1,7 @@
 import XCTest
 @testable import mensajedeVGR
 
+@MainActor
 final class BroSermonCatalogLoaderTests: XCTestCase {
     func testCatalogJSONExistsAndHasSermons() throws {
         let catalog = BroSermonCatalogLoader.shared.loadCatalog()

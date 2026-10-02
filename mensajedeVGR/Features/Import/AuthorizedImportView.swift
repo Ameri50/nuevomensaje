@@ -8,8 +8,7 @@ struct AuthorizedImportView: View {
     @State private var importStatus: String = ""
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 20) {
+        VStack(spacing: 20) {
                 // MARK: - Encabezado
                 VStack(alignment: .leading, spacing: 8) {
                     Text(localization.getString("homeTitle"))
@@ -26,9 +25,9 @@ struct AuthorizedImportView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "doc.badge.plus")
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Importar PDF")
+                                Text(localization.getString("importPDF"))
                                     .font(.subheadline)
-                                Text("Documentos autorizados")
+                                Text(localization.getString("importPDFSubtitle"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -46,9 +45,9 @@ struct AuthorizedImportView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "waveform.circle")
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Importar Audio")
+                                Text(localization.getString("importAudio"))
                                     .font(.subheadline)
-                                Text("Archivos MP3/M4A")
+                                Text(localization.getString("importAudioSubtitle"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -66,9 +65,9 @@ struct AuthorizedImportView: View {
                         HStack(spacing: 12) {
                             Image(systemName: "text.book.closed")
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Importar sermones en español")
+                                Text(localization.getString("importSpanishSermons"))
                                     .font(.subheadline)
-                                Text("Desde bro_branham_sermons_es.json")
+                                Text(localization.getString("importSpanishSermonsSubtitle"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -107,7 +106,7 @@ struct AuthorizedImportView: View {
                 // MARK: - Estado de Importación
                 if !importStatus.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Estado de Importación")
+                        Text(localization.getString("importStatusTitle"))
                             .font(.headline)
                         Text(importStatus)
                             .font(.caption)
@@ -123,7 +122,6 @@ struct AuthorizedImportView: View {
             }
             .navigationTitle(localization.getString("tabImport"))
             .navigationBarTitleDisplayMode(.inline)
-        }
     }
     
     private func importarSermonesEspanol() {
@@ -131,23 +129,49 @@ struct AuthorizedImportView: View {
             importStatus = "❌ No se encontró bro_branham_sermons_es.json en el bundle."
             return
         }
-        do {
-            let data = try Data(contentsOf: url)
-            let envelope = try JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data)
-            
-            let (insertados, actualizados) = DemoLibraryService.shared.upsert(
-                catalog: envelope.sermons,
-                context: modelContext
-            )
-            
-            importStatus = "✅ \(insertados) nuevo(s), \(actualizados) actualizado(s) en español."
-        } catch {
-            importStatus = "❌ Error al importar: \(error.localizedDescription)"
+        importStatus = localization.getString("importStatusLoading")
+
+        Task {
+            do {
+                // Leer y decodificar el JSON fuera del hilo principal
+                let data = try await Task.detached(priority: .userInitiated) {
+                    try Data(contentsOf: url)
+                }.value
+                let envelope = try JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data)
+                let total = envelope.sermons.count
+
+                importStatus = localization.getString("importStatusParsed")
+                    .replacingOccurrences(of: "{n}", with: "\(total)")
+
+                // Procesar en lotes de 50 para no congelar la UI
+                let batchSize = 50
+                var insertados = 0
+                var actualizados = 0
+
+                for batchStart in stride(from: 0, to: envelope.sermons.count, by: batchSize) {
+                    let batchEnd = min(batchStart + batchSize, envelope.sermons.count)
+                    let batch = Array(envelope.sermons[batchStart..<batchEnd])
+
+                    let (ins, act) = DemoLibraryService.shared.upsert(catalog: batch, context: modelContext)
+                    insertados += ins
+                    actualizados += act
+
+                    importStatus = localization.getString("importStatusProgress")
+                        .replacingOccurrences(of: "{done}", with: "\(batchEnd)")
+                        .replacingOccurrences(of: "{total}", with: "\(total)")
+                }
+
+                importStatus = "✅ \(insertados) nuevo(s), \(actualizados) actualizado(s) en español."
+            } catch {
+                importStatus = "❌ Error al importar: \(error.localizedDescription)"
+            }
         }
     }
 }
 
 #Preview {
-    AuthorizedImportView()
+    NavigationStack {
+        AuthorizedImportView()
+    }
         .environmentObject(LocalizationManager.shared)
 }

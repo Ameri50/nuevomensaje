@@ -69,9 +69,9 @@ struct HomeView: View {
 
                     HomeSection(title: localization.getString("homeAskMessages")) {
                         VStack(alignment: .leading, spacing: 10) {
-                            ForEach(exampleQuestions, id: \ .self) { question in
+                            ForEach(["homeQuestion1", "homeQuestion2", "homeQuestion3", "homeQuestion4"], id: \.self) { key in
                                 Button(action: {}) {
-                                    Text(question)
+                                    Text(localization.getString(key))
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .padding(10)
                                         .background(Color(.secondarySystemBackground))
@@ -146,12 +146,6 @@ private struct MessageCardRow: View {
     }
 }
 
-private let exampleQuestions = [
-    "¿Qué enseñó Branham sobre la mujer y el hombre?",
-    "¿Qué dijo sobre la serpiente?",
-    "¿Dónde habló sobre Daniel?",
-    "Busca todos los mensajes donde menciona Génesis 3."
-]
 
 #Preview {
     HomeView()

@@ -15,10 +15,10 @@ struct FavoritesView: View {
                             .font(.system(size: 48))
                             .foregroundStyle(.gray)
                         
-                        Text("Sin favoritos")
+                        Text(localization.getString("favoritesEmpty"))
                             .font(.headline)
                         
-                        Text("Agrega mensajes a favoritos para verlos aquí")
+                        Text(localization.getString("favoritesEmptyHint"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -94,6 +94,7 @@ struct ParagraphFavoriteRow: View {
     let modelContext: ModelContext
     @Query private var paragraphs: [ParagraphRecord]
     @Query private var sermons: [SermonRecord]
+    @EnvironmentObject private var localization: LocalizationManager
     
     var paragraph: ParagraphRecord? {
         paragraphs.first { $0.id == paragraphID }
@@ -108,7 +109,7 @@ struct ParagraphFavoriteRow: View {
         if let paragraph = paragraph, let sermon = sermon {
             NavigationLink(destination: SermonDetailView(sermon: sermon)) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(sermon.code) - Párrafo \(paragraph.number)")
+                    Text("\(sermon.code) - \(localization.getString("favoritesParagraph")) \(paragraph.number)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(paragraph.text)
