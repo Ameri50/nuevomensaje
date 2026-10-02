@@ -81,6 +81,55 @@ final class BranhamAudioCatalog {
         entry(for: code)?.audioURL
     }
 
+    /// Busca por título o código en los metadatos oficiales disponibles localmente.
+    func search(query: String, limit: Int = 5) -> [BranhamAudioEntry] {
+        loadIfNeeded()
+        let normalizedQuery = searchKey(query)
+        guard !normalizedQuery.isEmpty else { return [] }
+
+        let queryTokens = Set(normalizedQuery.split(separator: " ").map(String.init))
+        let queryCode = searchCode(query)
+        let scoredEntries = entries.compactMap { entry -> (entry: BranhamAudioEntry, score: Int)? in
+            let titleKey = searchKey(entry.title)
+            let titleTokens = Set(titleKey.split(separator: " ").map(String.init))
+            let normalizedCode = entry.code.lowercased().filter { $0.isLetter || $0.isNumber }
+            let codeMatches = !normalizedCode.isEmpty && queryCode.contains(normalizedCode)
+            let titleMatches = queryTokens.intersection(titleTokens).count
+            guard codeMatches || titleMatches > 0 else { return nil }
+
+            let score = (codeMatches ? 100 : 0)
+                + (titleKey == normalizedQuery ? 50 : 0)
+                + (titleKey.contains(normalizedQuery) ? 20 : 0)
+                + titleMatches
+            return (entry, score)
+        }
+
+        return scoredEntries
+            .sorted { first, second in
+                if first.score != second.score { return first.score > second.score }
+                return first.entry.code < second.entry.code
+            }
+            .prefix(max(0, limit))
+            .map(\.entry)
+    }
+
+    private func searchKey(_ value: String) -> String {
+        value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .map(String.init)
+            .filter { $0.count > 2 && !["the", "and", "for", "los", "las", "del", "una", "uno"].contains($0) }
+            .joined(separator: " ")
+    }
+
+    private func searchCode(_ value: String) -> String {
+        value
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber }
+    }
+
     var count: Int {
         loadIfNeeded()
         return entries.count

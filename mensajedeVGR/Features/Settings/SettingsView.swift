@@ -20,15 +20,13 @@ struct SettingsView: View {
                 // MARK: - Apariencia
                 Section(header: Text(localization.getString("settingsAppearance"))
                     .font(.headline)) {
-
-                        Toggle(isOn: $localization.isDarkMode) {
-                            HStack(spacing: 12) {
-                                Image(systemName: localization.isDarkMode ? "moon.fill" : "sun.max.fill")
-                                    .foregroundStyle(.orange)
-                                Text(localization.getString("settingsDarkMode"))
-                            }
+                        Picker("Apariencia", selection: $localization.isDarkMode) {
+                            Label("Claro", systemImage: "sun.max.fill")
+                                .tag(false)
+                            Label("Oscuro", systemImage: "moon.fill")
+                                .tag(true)
                         }
-                        .tint(.blue)
+                        .pickerStyle(.segmented)
                     }
                 // MARK: - Idioma
                 Section(header: Text(localization.getString("settingsLanguage"))
@@ -95,26 +93,13 @@ struct SettingsView: View {
                         }
                     }
 
-                // MARK: - Acerca de
-                Section(header: Text(localization.getString("settingsAbout"))
-                    .font(.headline)) {
-
-                        VStack(alignment: .center, spacing: 12) {
-                            Image(systemName: "book.circle.fill")
-                                .font(.system(size: 48))
-                                .foregroundStyle(.blue)
-
-                            Text(localization.getString("homeTitle"))
-                                .font(.headline)
-
-                            Text(localization.getString("settingsAboutText"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 20)
+                Section {
+                    NavigationLink {
+                        AboutAppView()
+                    } label: {
+                        Label("Sobre esta aplicación", systemImage: "info.circle")
                     }
+                }
             }
             .navigationTitle(localization.getString("settingsTitle"))
             .navigationBarTitleDisplayMode(.inline)

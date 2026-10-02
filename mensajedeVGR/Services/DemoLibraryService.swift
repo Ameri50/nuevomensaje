@@ -10,41 +10,59 @@ final class DemoLibraryService {
     ///   Es opcional para no romper llamados existentes sin este parámetro.
     func seedIfNeeded(context: ModelContext, onComplete: (() -> Void)? = nil) {
         let fetch: FetchDescriptor<SermonRecord> = FetchDescriptor<SermonRecord>()
-        guard let existing = try? context.fetch(fetch), existing.isEmpty else {
-            onComplete?()
-            return
-        }
+        if let existing = try? context.fetch(fetch), existing.isEmpty {
+            let catalog = BroSermonCatalogLoader.shared.loadCatalog()
 
-        let catalog = BroSermonCatalogLoader.shared.loadCatalog()
-
-        for sermon in catalog {
-            let sermonRecord = SermonRecord(
-                code: sermon.id,
-                title: sermon.title,
-                date: parseDate(from: sermon.meta?.date ?? sermon.date ?? ""),
-                location: sermon.meta?.location ?? sermon.location ?? "Desconocida",
-                language: "Inglés",
-                durationMinutes: estimateDuration(from: sermon.paragraphs.count),
-                audioURL: nil,
-                source: "bro-william-branham-sermon-library",
-                body: sermon.paragraphs.map { $0.text }.joined(separator: "\n\n"),
-                isFeatured: false
-            )
-
-            context.insert(sermonRecord)
-
-            for paragraph in sermon.paragraphs {
-                let paragraphRecord = ParagraphRecord(
-                    sermonID: sermonRecord.id,
-                    number: paragraph.number,
-                    text: paragraph.text
+            for sermon in catalog {
+                let sermonRecord = SermonRecord(
+                    code: sermon.id,
+                    title: sermon.title,
+                    date: parseDate(from: sermon.meta?.date ?? sermon.date ?? ""),
+                    location: sermon.meta?.location ?? sermon.location ?? "Desconocida",
+                    language: "Inglés",
+                    durationMinutes: estimateDuration(from: sermon.paragraphs.count),
+                    audioURL: nil,
+                    source: "bro-william-branham-sermon-library",
+                    body: sermon.paragraphs.map { $0.text }.joined(separator: "\n\n"),
+                    isFeatured: false
                 )
-                context.insert(paragraphRecord)
+
+                context.insert(sermonRecord)
+
+                for paragraph in sermon.paragraphs {
+                    context.insert(ParagraphRecord(
+                        sermonID: sermonRecord.id,
+                        number: paragraph.number,
+                        text: paragraph.text
+                    ))
+                }
             }
         }
 
+        seedBundledSpanishCatalogIfNeeded(context: context)
         try? context.save()
         onComplete?()
+    }
+
+    private func seedBundledSpanishCatalogIfNeeded(context: ModelContext) {
+        guard let url = Bundle.main.url(forResource: "bro_branham_sermons_es", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              !BroSermonCatalogLoader.isGitLFSPointer(data),
+              let envelope = try? JSONDecoder().decode(BroSermonCatalogEnvelope.self, from: data) else {
+            return
+        }
+
+        let spanishFetch = FetchDescriptor<SermonRecord>(
+            predicate: #Predicate { $0.language == "Español" }
+        )
+        let existingSpanishCount = (try? context.fetchCount(spanishFetch)) ?? 0
+        guard existingSpanishCount < envelope.sermons.count else { return }
+
+        for batchStart in stride(from: 0, to: envelope.sermons.count, by: 50) {
+            let batchEnd = min(batchStart + 50, envelope.sermons.count)
+            let batch = Array(envelope.sermons[batchStart..<batchEnd])
+            DemoLibraryService.shared.upsert(catalog: batch, context: context)
+        }
     }
 
     /// Inserta o actualiza sermones en SwiftData a partir de un catálogo

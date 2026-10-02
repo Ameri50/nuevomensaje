@@ -102,6 +102,64 @@ final class NoteRecord {
 }
 
 @Model
+final class ParagraphHighlightRecord {
+    @Attribute(.unique) var id: UUID
+    var sermonID: UUID
+    var paragraphID: UUID
+    var color: String
+    var createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        sermonID: UUID,
+        paragraphID: UUID,
+        color: String = "yellow",
+        createdAt: Date = .now
+    ) {
+        self.id = id
+        self.sermonID = sermonID
+        self.paragraphID = paragraphID
+        self.color = color
+        self.createdAt = createdAt
+    }
+}
+
+@Model
+final class FreeNoteRecord {
+    @Attribute(.unique) var id: UUID
+    var title: String
+    var text: String
+    var referenceMessageID: String?
+    var referenceCode: String?
+    var referenceTitle: String?
+    var referenceParagraphNumber: Int?
+    var createdAt: Date
+    var updatedAt: Date
+
+    init(
+        id: UUID = UUID(),
+        title: String = "",
+        text: String = "",
+        referenceMessageID: String? = nil,
+        referenceCode: String? = nil,
+        referenceTitle: String? = nil,
+        referenceParagraphNumber: Int? = nil,
+        createdAt: Date = .now,
+        updatedAt: Date = .now
+    ) {
+        self.id = id
+        self.title = title
+        self.text = text
+        self.referenceMessageID = referenceMessageID
+        self.referenceCode = referenceCode
+        self.referenceTitle = referenceTitle
+        self.referenceParagraphNumber = referenceParagraphNumber
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+}
+
+@Model
 final class AIChatMessage {
     @Attribute(.unique) var id: UUID
     var role: String

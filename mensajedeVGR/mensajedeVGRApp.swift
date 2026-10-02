@@ -22,6 +22,8 @@ struct mensajedeVGRApp: App {
             ParagraphRecord.self,
             FavoriteRecord.self,
             NoteRecord.self,
+            ParagraphHighlightRecord.self,
+            FreeNoteRecord.self,
             AIChatMessage.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

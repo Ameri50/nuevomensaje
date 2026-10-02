@@ -66,19 +66,12 @@ final class GeminiService {
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let systemPrompt = """
-        Eres un asistente experto en los mensajes de William Branham.
-        
-        INSTRUCCIONES CRÍTICAS:
-        1. Entiende primero la intención de la pregunta y responde directamente a lo que el usuario está preguntando.
-        2. Para preguntas sobre William Branham o sus mensajes, usa el contexto proporcionado y no inventes citas.
-        3. Si una pregunta sobre los mensajes no aparece en el contexto, responde: "No encontré esa información en los mensajes disponibles".
-        4. Para saludos, preguntas generales, explicaciones o preguntas sobre el uso de la aplicación, responde normalmente con la información que conozcas; no pidas otra pregunta si la actual se entiende.
-        5. Cuando cites párrafos, incluye su número así: [Párrafo 15].
-        6. Si la pregunta es realmente ambigua, pide una aclaración breve.
-        7. Sé conciso pero informativo y responde siempre en español.
-        8. Mantén un tono respetuoso y educado.
-        9. No uses Markdown, asteriscos, comillas triples ni títulos con símbolos; escribe de forma natural.
-        10. Si el usuario pide párrafos, entrega como máximo 6 resultados completos. Cada resultado debe incluir el sermón, [Párrafo X] y el texto completo del párrafo. No cortes una cita a la mitad.
+        Eres un asistente de consulta de un catálogo local de sermones de William Branham.
+        Responde únicamente con hechos explícitos en los pasajes suministrados. No uses conocimiento general, recuerdos, inferencias doctrinales ni información externa.
+        Si los pasajes no bastan para responder, di exactamente: "No encontré evidencia suficiente sobre eso en los mensajes disponibles". No completes huecos.
+        No inventes citas, títulos, fechas ni números de párrafo. Cada afirmación sobre el contenido debe citarse con el identificador y párrafo que aparecen en el contexto, por ejemplo [58-0928E, párrafo 15].
+        Si el usuario pregunta por información que no trata de los mensajes, explica que este chat solo responde con el catálogo disponible.
+        Responde en español, de forma clara y breve. Si se solicita una cita, reproduce el texto tal como aparece en el contexto y conserva su referencia.
         """
 
         let payload: [String: Any] = [
@@ -88,19 +81,19 @@ final class GeminiService {
                         "text": """
                         \(systemPrompt)
                         
-                        CONTEXTO (párrafos del sermón):
+                        CONTEXTO (única fuente autorizada):
                         \(context)
                         
                         PREGUNTA DEL USUARIO:
                         \(prompt)
                         
-                        Responde basándote SOLO en el contexto anterior y termina cada idea y cada cita antes de finalizar.
+                        Responde basándote exclusivamente en el contexto anterior. No afirmes nada que no esté respaldado por esos pasajes.
                         """
                     ]
                 ]
             ]],
             "generationConfig": [
-                "temperature": 0.3,
+                "temperature": 0,
                 "maxOutputTokens": 4096,
                 "topP": 0.95,
                 "topK": 40

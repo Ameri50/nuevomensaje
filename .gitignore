@@ -11,3 +11,6 @@ Package.resolved
 
 # Secrets
 **/Secrets.swift
+
+# Airlock bootstrap
+.windsurf/
